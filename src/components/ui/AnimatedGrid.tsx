@@ -586,7 +586,7 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
   // Split grid logic
   // Top: 2 rows from ancient-technology.json (5x2)
   // Only use first 8 artists, then add Subscribe and Instagram as special dots
-  const realArtists = ancientTechnology.slice(0, 8);
+  const realArtists = ancientTechnology.slice(0, 9);
 
   // Create special dots for Subscribe and Instagram
   const specialDots = [
@@ -596,13 +596,6 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
       isSpecialLink: true,
       linkType: "subscribe",
       url: "/subscribe",
-    },
-    {
-      artistName: "Instagram",
-      slug: "instagram-link",
-      isSpecialLink: true,
-      linkType: "instagram",
-      url: "https://instagram.com/5x5_collective",
     },
   ];
 
