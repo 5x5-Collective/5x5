@@ -129,7 +129,7 @@
     "website": "https://blog.ilangitter.com/",
     "instagram": "",
     "images": {
-      "artwork": [],
+      "artwork": ["/images/ancient-technology/ilan-artwork.jpg"],
       "headshots": ["/images/ancient-technology/ilan-headshot.jpeg"]
     }
   },
