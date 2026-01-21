@@ -200,7 +200,7 @@ export const TurrellDot: React.FC<TurrellDotProps> = ({
         {isHovered && !isSelected ? (
           <span
             className={`${bricolage.className} text-[0.4em] font-medium text-center`}
-            style={{ color: turrellAndersonPalette.velvetNavy }}
+            style={{ color: turrellAndersonPalette.warmIvory }}
           >
             {content}
           </span>
