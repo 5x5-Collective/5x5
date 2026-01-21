@@ -521,7 +521,7 @@ const ContentCard: React.FC<ContentCardProps> = ({
                   </p>
                 ))}
               <motion.ul
-                className="mt-8 space-y-3 flex flex-wrap justify-center gap-3"
+                className="mt-8 flex flex-wrap justify-center items-center gap-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
