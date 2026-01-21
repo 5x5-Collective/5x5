@@ -7,6 +7,18 @@ import Link from "next/link";
 import Image from "next/image";
 import GalleryContentCard from "./GalleryContentCard";
 import SubscribeCard from "./SubscribeCard";
+import {
+  TurrellAndersonCard,
+  LightLineDivider,
+  SectionLabel,
+  CardTitle,
+  CardBody,
+  CardButton,
+  getGradientFromString,
+  turrellAndersonPalette,
+  cardGradients,
+  CardGradient,
+} from "./TurrellAndersonCard";
 import { useRouter, usePathname } from "next/navigation";
 // Import ancient technology data
 const ancientTechData = require("../../../data/ancient-technology.json");
@@ -393,7 +405,19 @@ const Dot: React.FC<DotProps> = ({
   );
 };
 
-// Content Card Component
+// Gradient mappings for each content color
+const contentGradientMap: Record<keyof typeof colorPalette, CardGradient> = {
+  perceptualViolet: { from: turrellAndersonPalette.violetHour, via: turrellAndersonPalette.dustyRose, to: turrellAndersonPalette.skyfall },
+  celestialBlue: { from: turrellAndersonPalette.skyfall, via: turrellAndersonPalette.powderBlue, to: turrellAndersonPalette.seaFoam },
+  infraPink: { from: turrellAndersonPalette.dustyRose, via: turrellAndersonPalette.dawnGlow, to: turrellAndersonPalette.horizon },
+  midnightIndigo: { from: turrellAndersonPalette.velvetNavy, via: turrellAndersonPalette.violetHour, to: turrellAndersonPalette.skyfall },
+  horizonPeach: { from: turrellAndersonPalette.dawnGlow, via: turrellAndersonPalette.horizon, to: turrellAndersonPalette.mustardPress },
+  atmosphericWhite: { from: turrellAndersonPalette.warmIvory, via: turrellAndersonPalette.paleYellow, to: turrellAndersonPalette.skyfall },
+  luminalAmber: { from: turrellAndersonPalette.mustardPress, via: turrellAndersonPalette.horizon, to: turrellAndersonPalette.dawnGlow },
+  pastelGreen: { from: turrellAndersonPalette.seaFoam, via: turrellAndersonPalette.powderBlue, to: turrellAndersonPalette.paleYellow },
+};
+
+// Content Card Component - uses shared TurrellAndersonCard base
 interface ContentCardProps {
   content: ContentKey;
   isExpanded: boolean;
@@ -405,170 +429,143 @@ const ContentCard: React.FC<ContentCardProps> = ({
   isExpanded,
   onClose,
 }) => {
-  const getCardBackgroundColor = (content: ContentKey) => {
-    if (["Made You Think", "Fullstack Human", "Bot or Not"].includes(content)) {
-      return colorPalette.midnightIndigo;
-    }
-    return colorPalette[contentColorMap[content]];
-  };
-
-  const getCardTextColor = (content: ContentKey) => {
-    if (["Made You Think", "Fullstack Human", "Bot or Not"].includes(content)) {
-      return colorPalette.atmosphericWhite;
-    }
-    return colorPalette.midnightIndigo;
-
-    // return isDarkColor(colorPalette[contentColorMap[content]])
-    //   ? colorPalette.atmosphericWhite
-    //   : colorPalette.midnightIndigo;
-  };
+  const colorKey = contentColorMap[content];
+  const gradient = contentGradientMap[colorKey];
+  const accent = turrellAndersonPalette.velvetNavy;
 
   return (
-    <motion.div
-      className="w-full lg:w-[min(90vw,1200px)] lg:h-auto lg:aspect-[16/9] lg:m-8 pointer-events-auto"
-      initial={{ y: "100%" }}
-      animate={{
-        y: 0,
-        height: isExpanded ? "90vh" : "70vh",
-      }}
-      exit={{ y: "100%" }}
-      transition={{ type: "spring", damping: 20 }}
-      drag="y"
-      dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={0.5}
-      onDragEnd={(e, info) => {
-        if (typeof window !== "undefined" && window.innerWidth < 1024) {
-          console.log("Drag offset y:", info.offset.y);
-          if (info.offset.y > 60) {
-            onClose();
-          }
-        }
-      }}
+    <TurrellAndersonCard
+      gradient={gradient}
+      onClose={onClose}
+      isExpanded={isExpanded}
+      maxWidth="1100px"
     >
-      <div
-        className="w-full h-full rounded-t-3xl lg:rounded-2xl overflow-hidden bg-opacity-100"
-        style={{
-          backgroundColor: getCardBackgroundColor(content),
-        }}
-      >
-        {/* Drag handle - only visible on mobile/tablet */}
-        <div className="w-12 h-1 mx-auto mt-3 mb-3 bg-white/30 rounded-full lg:hidden" />
+      <div className="max-w-3xl mx-auto">
+        {/* Header section */}
+        <motion.div
+          className="text-center mb-10 lg:mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+        >
+          <SectionLabel accent={accent} delay={0.2}>
+            5x5 Collective
+          </SectionLabel>
 
-        {/* Content */}
-        <div className="px-6 pt-2 pb-8 lg:p-12 h-full overflow-y-auto">
-          <div className="flex flex-col lg:flex-row gap-8">
-            <div className="flex-1 space-y-8">
-              <h1
-                className="text-3xl lg:text-4xl font-bold leading-relaxed"
-                style={{
-                  color: getCardTextColor(content),
-                }}
-              >
-                {content}
-              </h1>
-              {content === "Contributors" ? (
-                <>
-                  <p
-                    className="leading-relaxed"
-                    style={{
-                      color: getCardTextColor(content),
-                    }}
-                  >
-                    {placeholderContent[content].text
-                      .split("\n\n")
-                      .map((para, idx) => (
-                        <span
-                          key={idx}
-                          style={{ display: "block", marginBottom: "1em" }}
-                        >
-                          {para}
-                        </span>
-                      ))}
+          <CardTitle accent={accent} delay={0.3} className="mt-4 mb-2">
+            {content}
+          </CardTitle>
+
+          <motion.div
+            className="w-16 h-px mx-auto my-5"
+            style={{ backgroundColor: `${accent}30` }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          />
+        </motion.div>
+
+        {/* Description */}
+        <CardBody accent={accent} delay={0.5} className="text-center mb-10">
+          {content === "Contributors" ? (
+            <>
+              {placeholderContent[content].text
+                .split("\n\n")
+                .map((para, idx) => (
+                  <p key={idx} className="text-base lg:text-lg leading-relaxed mb-4">
+                    {para}
                   </p>
-                  <ul className="mt-4 space-y-1">
-                    {contributorsList.map((contributor) => (
-                      <li key={contributor.url}>
-                        <a
-                          href={contributor.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline"
-                          style={{
-                            color: getCardTextColor(content),
-                          }}
-                        >
-                          {contributor.name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <p
-                  className="leading-relaxed"
-                  style={{
-                    color: getCardTextColor(content),
-                  }}
-                >
-                  {placeholderContent[content].text
-                    .split("\n\n")
-                    .map((para, idx) => (
-                      <span
-                        key={idx}
-                        style={{ display: "block", marginBottom: "1em" }}
-                      >
-                        {para}
-                      </span>
-                    ))}
-                </p>
-              )}
-              {placeholderContent[content].createdBy && (
-                <div className="mb-2">
-                  <span
-                    className="text-sm"
-                    style={{
-                      color: getCardTextColor(content),
-                    }}
-                  >
-                    Created by:
-                  </span>{" "}
-                  <a
-                    href={placeholderContent[content].createdBy.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm underline"
-                    style={{
-                      color: getCardTextColor(content),
-                    }}
-                  >
-                    {placeholderContent[content].createdBy.name}
-                  </a>
-                </div>
-              )}
-              <Link
-                href={placeholderContent[content].link}
-                className="inline-block px-6 py-3 rounded-lg transition-opacity hover:opacity-90"
-                style={{
-                  backgroundColor:
-                    colorPalette[complementaryColors[contentColorMap[content]]],
-                  color: colorPalette.atmosphericWhite,
-                }}
+                ))}
+              <motion.ul
+                className="mt-8 space-y-3 flex flex-wrap justify-center gap-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
               >
-                {[
-                  "About",
-                  "Companies",
-                  "Residency",
-                  "Grants",
-                  "Contributors",
-                ].includes(content)
-                  ? "Get In Touch"
-                  : "Learn more →"}
-              </Link>
+                {contributorsList.map((contributor, idx) => (
+                  <motion.li
+                    key={contributor.url}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.7 + idx * 0.1 }}
+                  >
+                    <CardButton href={contributor.url} variant="secondary" accent={accent} external>
+                      {contributor.name}
+                    </CardButton>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            </>
+          ) : (
+            <div className="max-w-2xl mx-auto">
+              {placeholderContent[content].text
+                .split("\n\n")
+                .map((para, idx) => (
+                  <p key={idx} className="text-base lg:text-lg leading-relaxed mb-4 last:mb-0">
+                    {para}
+                  </p>
+                ))}
             </div>
-          </div>
-        </div>
+          )}
+        </CardBody>
+
+        {/* Created by */}
+        {placeholderContent[content].createdBy && (
+          <motion.div
+            className="text-center mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <span
+              className="text-sm tracking-wide"
+              style={{
+                color: `${accent}90`,
+                fontFamily: "var(--font-fira-code), 'Fira Code', monospace",
+              }}
+            >
+              Created by{" "}
+              <a
+                href={placeholderContent[content].createdBy!.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:opacity-80 transition-opacity"
+                style={{ color: accent }}
+              >
+                {placeholderContent[content].createdBy!.name}
+              </a>
+            </span>
+          </motion.div>
+        )}
+
+        {/* Divider */}
+        <LightLineDivider gradient={gradient} className="my-10 max-w-sm mx-auto" delay={0.65} />
+
+        {/* CTA Button */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <CardButton
+            href={placeholderContent[content].link}
+            variant="primary"
+            accent={accent}
+            external={placeholderContent[content].link.startsWith("http") || placeholderContent[content].link.startsWith("mailto")}
+          >
+            <span>
+              {["About", "Companies", "Residency", "Grants", "Contributors"].includes(content)
+                ? "Get In Touch"
+                : "Learn More"}
+            </span>
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" className="opacity-70">
+              <path d="M2.5 9.5L9.5 2.5M9.5 2.5H4M9.5 2.5V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </CardButton>
+        </motion.div>
       </div>
-    </motion.div>
+    </TurrellAndersonCard>
   );
 };
 

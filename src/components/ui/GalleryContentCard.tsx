@@ -1,6 +1,17 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import {
+  TurrellAndersonCard,
+  LightLineDivider,
+  SectionLabel,
+  CardTitle,
+  CardSubtitle,
+  CardBody,
+  CardButton,
+  getGradientFromString,
+  turrellAndersonPalette,
+} from "./TurrellAndersonCard";
 
 interface GalleryContentCardProps {
   artistName: string;
@@ -18,28 +29,7 @@ interface GalleryContentCardProps {
   instagram?: string;
 }
 
-// Import color palette from AnimatedGrid
-const colorPalette = {
-  perceptualViolet: "#7B5EEA",
-  celestialBlue: "#7CD7FF",
-  infraPink: "#FF69B4",
-  midnightIndigo: "#1A1B4B",
-  horizonPeach: "#FFDAB9",
-  atmosphericWhite: "#FFFFFF",
-  luminalAmber: "#FFA500",
-  pastelGreen: "#B6F5C9",
-};
-
-const complementaryColors: Record<keyof typeof colorPalette, keyof typeof colorPalette> = {
-  perceptualViolet: "luminalAmber",
-  celestialBlue: "perceptualViolet",
-  infraPink: "midnightIndigo",
-  midnightIndigo: "celestialBlue",
-  horizonPeach: "infraPink",
-  atmosphericWhite: "perceptualViolet",
-  luminalAmber: "midnightIndigo",
-  pastelGreen: "infraPink",
-};
+const accent = turrellAndersonPalette.velvetNavy;
 
 export const GalleryContentCard: React.FC<GalleryContentCardProps> = ({
   artistName,
@@ -53,244 +43,259 @@ export const GalleryContentCard: React.FC<GalleryContentCardProps> = ({
   website,
   instagram,
 }) => {
-  const getCardBackgroundColor = () => {
-    // Use a default color for gallery cards, or could be based on artist
-    return colorPalette.perceptualViolet;
-  };
-
-  const getCardTextColor = () => {
-    return colorPalette.atmosphericWhite;
-  };
+  const gradient = getGradientFromString(artistName);
 
   return (
-    <motion.div
-      className="w-full lg:w-[min(90vw,1200px)] lg:h-auto lg:aspect-[16/9] lg:m-8 pointer-events-auto"
-      initial={{ y: "100%" }}
-      animate={{
-        y: 0,
-        height: isExpanded ? "90vh" : "70vh",
-      }}
-      exit={{ y: "100%" }}
-      transition={{ type: "spring", damping: 20 }}
+    <TurrellAndersonCard
+      gradient={gradient}
+      onClose={onClose}
+      isExpanded={isExpanded}
+      maxWidth="1100px"
     >
-      <div
-        className="w-full h-full rounded-t-3xl lg:rounded-2xl overflow-hidden bg-opacity-100"
-        style={{
-          backgroundColor: getCardBackgroundColor(),
-        }}
-      >
-        {/* Drag handle - only visible on mobile/tablet */}
-        <motion.div 
-          className="w-12 h-1 mx-auto mt-3 mb-3 bg-white/30 rounded-full lg:hidden cursor-grab active:cursor-grabbing"
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.5}
-          onDragEnd={(e, info) => {
-            if (typeof window !== "undefined" && window.innerWidth < 1024) {
-              console.log("Drag offset y:", info.offset.y);
-              if (info.offset.y > 60) {
-                onClose?.();
-              }
-            }
-          }}
-        />
-
-        {/* Content - scrollable area */}
-        <div 
-          className="px-6 pt-2 pb-8 lg:p-12 h-full overflow-y-auto overscroll-y-contain"
-          style={{
-            touchAction: 'pan-y', // Allow vertical scrolling but prevent horizontal pan
-            WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
-          }}
+      <div className="max-w-4xl mx-auto">
+        {/* Header section - Anderson-style centered typography */}
+        <motion.div
+          className="text-center mb-10 lg:mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
         >
-          <div className="flex flex-col lg:flex-row gap-8">
-            <div className="flex-1 space-y-8">
-              {/* ARTWORK SECTION */}
-              <div className="space-y-6">
-                <h1
-                  className="text-3xl lg:text-4xl font-bold leading-relaxed"
-                  style={{
-                    color: getCardTextColor(),
-                  }}
-                >
-                  {workName}
-                </h1>
-                
-                {/* Artwork images */}
-                {images.artwork && images.artwork.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {images.artwork.map((imageSrc, i) => (
-                      <div key={i} className="overflow-hidden rounded-lg">
-                        <img 
-                          src={imageSrc} 
-                          alt={`${workName} artwork ${i + 1}`}
-                          className="w-full h-auto object-contain"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[1, 2, 3].map((i) => (
-                      <div 
-                        key={i} 
-                        className="aspect-square bg-white/10 rounded-lg flex items-center justify-center"
-                      >
-                        <span 
-                          className="text-sm opacity-60"
-                          style={{ color: getCardTextColor() }}
-                        >
-                          Artwork {i}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          <SectionLabel accent={accent} delay={0.2}>
+            Ancient Technology
+          </SectionLabel>
 
-                {projectDescription && (
-                  <div>
-                    <h3
-                      className="text-lg font-semibold mb-2"
-                      style={{
-                        color: getCardTextColor(),
-                      }}
-                    >
-                      About the Work
-                    </h3>
-                    <p
-                      className="leading-relaxed"
-                      style={{
-                        color: getCardTextColor(),
-                      }}
-                    >
-                      {projectDescription.split("\n\n").map((para, idx) => (
-                        <span
-                          key={idx}
-                          style={{ display: "block", marginBottom: "1em" }}
-                        >
-                          {para}
-                        </span>
-                      ))}
-                    </p>
-                  </div>
-                )}
-                
-                {price && (
-                  <div className="mb-2">
-                    <span
-                      className="text-sm"
-                      style={{
-                        color: getCardTextColor(),
-                      }}
-                    >
-                      Price:
-                    </span>{" "}
-                    <span
-                      className="text-sm font-medium"
-                      style={{
-                        color: getCardTextColor(),
-                      }}
-                    >
-                      {price}
-                    </span>
-                  </div>
-                )}
-              </div>
+          <CardTitle accent={accent} delay={0.3} className="mt-4 mb-2">
+            {workName}
+          </CardTitle>
 
-              {/* ARTIST SECTION */}
-              <div className="border-t border-white/20 pt-6 space-y-6">
-                <h2
-                  className="text-xl lg:text-2xl font-medium"
-                  style={{
-                    color: getCardTextColor(),
-                  }}
-                >
-                  About the Artist: {artistName}
-                </h2>
-                
-                {/* Artist headshot images */}
-                {images.headshots && images.headshots.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {images.headshots.map((imageSrc, i) => (
-                      <div key={i} className="overflow-hidden rounded-lg">
-                        <img 
-                          src={imageSrc} 
-                          alt={`${artistName} headshot ${i + 1}`}
-                          className="w-full h-auto object-contain"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {[1, 2].map((i) => (
-                      <div 
-                        key={i} 
-                        className="aspect-[4/3] bg-white/10 rounded-lg flex items-center justify-center"
-                      >
-                        <span 
-                          className="text-sm opacity-60"
-                          style={{ color: getCardTextColor() }}
-                        >
-                          Artist Photo {i}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          <motion.div
+            className="w-16 h-px mx-auto my-5"
+            style={{ backgroundColor: `${accent}30` }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          />
 
-                <p
-                  className="leading-relaxed"
-                  style={{
-                    color: getCardTextColor(),
-                  }}
+          <CardSubtitle accent={accent} delay={0.5}>
+            by {artistName}
+          </CardSubtitle>
+        </motion.div>
+
+        {/* Artwork Section - Anderson-style symmetrical framing */}
+        {images.artwork && images.artwork.length > 0 && (
+          <motion.div
+            className="mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <div className={`grid gap-4 ${images.artwork.length === 1 ? 'grid-cols-1' : images.artwork.length === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
+              {images.artwork.map((imageSrc, i) => (
+                <motion.div
+                  key={i}
+                  className={`overflow-hidden relative group ${images.artwork.length === 1 ? 'max-w-2xl mx-auto' : ''}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 + i * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
                 >
-                  {bio.split("\n\n").map((para, idx) => (
-                    <span
-                      key={idx}
-                      style={{ display: "block", marginBottom: "1em" }}
-                    >
-                      {para}
-                    </span>
-                  ))}
-                </p>
-                
-                <div className="flex gap-4">
-                  {website && (
-                    <Link
-                      href={website.startsWith('http') ? website : `https://${website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block px-6 py-3 rounded-lg transition-opacity hover:opacity-90"
-                      style={{
-                        backgroundColor: colorPalette.luminalAmber,
-                        color: colorPalette.atmosphericWhite,
-                      }}
-                    >
-                      Visit Website →
-                    </Link>
-                  )}
-                  {instagram && (
-                    <Link
-                      href={`https://instagram.com/${instagram}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block px-6 py-3 rounded-lg transition-opacity hover:opacity-90"
-                      style={{
-                        backgroundColor: colorPalette.infraPink,
-                        color: colorPalette.atmosphericWhite,
-                      }}
-                    >
-                      @{instagram}
-                    </Link>
-                  )}
-                </div>
-              </div>
+                  {/* Anderson-style frame border */}
+                  <div
+                    className="absolute inset-0 rounded-lg pointer-events-none z-10"
+                    style={{
+                      boxShadow: `inset 0 0 0 3px ${turrellAndersonPalette.warmIvory}`,
+                    }}
+                  />
+
+                  {/* Turrell glow on hover */}
+                  <motion.div
+                    className="absolute inset-0 rounded-lg pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      boxShadow: `0 0 40px ${gradient.from}60, inset 0 0 30px ${gradient.via}30`,
+                    }}
+                  />
+
+                  <img
+                    src={imageSrc}
+                    alt={`${workName} artwork ${i + 1}`}
+                    className="w-full h-auto object-contain rounded-lg"
+                  />
+                </motion.div>
+              ))}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        )}
+
+        {/* About the Work - Anderson typography style */}
+        {projectDescription && (
+          <motion.div
+            className="mb-12 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <motion.div
+              className="inline-block mb-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.65 }}
+            >
+              <SectionLabel accent={accent}>About the Work</SectionLabel>
+            </motion.div>
+
+            <CardBody accent={accent} delay={0.7} className="max-w-2xl mx-auto">
+              {projectDescription.split("\n\n").map((para, idx) => (
+                <p
+                  key={idx}
+                  className="text-base lg:text-lg leading-relaxed mb-4 last:mb-0"
+                >
+                  {para}
+                </p>
+              ))}
+            </CardBody>
+
+            {price && (
+              <motion.div
+                className="mt-8 inline-block"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+              >
+                <span
+                  className="text-sm tracking-wide px-6 py-3 rounded-full"
+                  style={{
+                    color: turrellAndersonPalette.warmIvory,
+                    backgroundColor: accent,
+                    fontFamily: "var(--font-fira-code), 'Fira Code', monospace",
+                  }}
+                >
+                  {price === "On request" ? "Price on Request" : `$${price}`}
+                </span>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Divider - Turrell light line */}
+        <LightLineDivider gradient={gradient} className="my-12 max-w-md mx-auto" delay={0.85} />
+
+        {/* Artist Section */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+        >
+          <motion.div className="mb-8">
+            <SectionLabel accent={accent}>The Artist</SectionLabel>
+          </motion.div>
+
+          {/* Artist headshots - circular Anderson style */}
+          {images.headshots && images.headshots.length > 0 && (
+            <motion.div
+              className="flex justify-center gap-4 mb-8"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1 }}
+            >
+              {images.headshots.map((imageSrc, i) => (
+                <motion.div
+                  key={i}
+                  className="relative group"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  {/* Outer glow ring */}
+                  <motion.div
+                    className="absolute -inset-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      background: `linear-gradient(135deg, ${gradient.from}, ${gradient.to})`,
+                      filter: "blur(8px)",
+                    }}
+                  />
+
+                  {/* Frame */}
+                  <div
+                    className="relative w-28 h-28 lg:w-36 lg:h-36 rounded-full overflow-hidden"
+                    style={{
+                      padding: "3px",
+                      background: turrellAndersonPalette.warmIvory,
+                    }}
+                  >
+                    <img
+                      src={imageSrc}
+                      alt={`${artistName} headshot`}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+
+          <motion.h2
+            className="text-2xl lg:text-3xl font-light mb-6"
+            style={{
+              color: accent,
+              fontFamily: "var(--font-playfair), 'Playfair Display', Georgia, serif",
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.1 }}
+          >
+            {artistName}
+          </motion.h2>
+
+          <CardBody accent={`${accent}cc`} delay={1.2} className="max-w-2xl mx-auto mb-10">
+            {bio.split("\n\n").map((para, idx) => (
+              <p
+                key={idx}
+                className="text-base leading-relaxed mb-4 last:mb-0"
+              >
+                {para}
+              </p>
+            ))}
+          </CardBody>
+
+          {/* Links - Anderson style buttons */}
+          <motion.div
+            className="flex flex-wrap justify-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.3 }}
+          >
+            {website && (
+              <CardButton
+                href={website.startsWith('http') ? website : `https://${website}`}
+                variant="primary"
+                accent={accent}
+                external
+              >
+                <span>Visit Website</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="opacity-70">
+                  <path d="M2.5 9.5L9.5 2.5M9.5 2.5H4M9.5 2.5V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </CardButton>
+            )}
+
+            {instagram && (
+              <CardButton
+                href={`https://instagram.com/${instagram}`}
+                variant="secondary"
+                accent={accent}
+                external
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="opacity-80">
+                  <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5"/>
+                  <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5"/>
+                  <circle cx="18" cy="6" r="1" fill="currentColor"/>
+                </svg>
+                <span>@{instagram}</span>
+              </CardButton>
+            )}
+          </motion.div>
+        </motion.div>
       </div>
-    </motion.div>
+    </TurrellAndersonCard>
   );
 };
 
