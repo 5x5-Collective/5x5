@@ -132,6 +132,7 @@ const placeholderContent: Record<
     text: "Experiments in Reincarnation is a sculptural exploration of transformation -- of bodies, of attachments, of scale. It began with a fascination: how do we define who we are over time?… See more.",
     link: "https://vimeo.com/558070075",
     createdBy: { name: "Nikhil Kumar", url: "https://nikhilkumar.media" },
+    images: ["/content-images/experiments-in-reincarnation-1.png"],
   },
   "Made You Think": {
     text: "Join Nat, Neil, and Adil as they examine ideas that – as the name suggests – make you think. Episodes will explore books, essays, podcasts, and anything else that warrants further discussion, teaches something useful, or at the very least, exercises our brain muscles.",
