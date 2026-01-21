@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, ReactNode } from "react";
+import React, { useState, useRef, useCallback, ReactNode, useEffect } from "react";
 import { motion } from "framer-motion";
 
 // ============================================
@@ -281,7 +281,30 @@ export const TurrellAndersonCard: React.FC<TurrellAndersonCardProps> = ({
   className = "",
 }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
+  const [dragY, setDragY] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Lock body scroll on mobile when card is open
+  useEffect(() => {
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+    if (isMobile) {
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.top = `-${window.scrollY}px`;
+    }
+    return () => {
+      if (isMobile) {
+        const scrollY = document.body.style.top;
+        document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.width = "";
+        document.body.style.top = "";
+        window.scrollTo(0, parseInt(scrollY || "0") * -1);
+      }
+    };
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -291,12 +314,19 @@ export const TurrellAndersonCard: React.FC<TurrellAndersonCardProps> = ({
     setMousePosition({ x, y });
   }, []);
 
-  const handleDragEnd = useCallback((_: any, info: { offset: { y: number } }) => {
+  const handleDrag = useCallback((_: any, info: { offset: { y: number } }) => {
+    // Only allow dragging down
+    setDragY(Math.max(0, info.offset.y));
+  }, []);
+
+  const handleDragEnd = useCallback((_: any, info: { offset: { y: number }; velocity: { y: number } }) => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      if (info.offset.y > 60) {
+      // Close if dragged down more than 100px or with enough velocity
+      if (info.offset.y > 100 || info.velocity.y > 500) {
         onClose?.();
       }
     }
+    setDragY(0);
   }, [onClose]);
 
   return (
@@ -368,23 +398,30 @@ export const TurrellAndersonCard: React.FC<TurrellAndersonCardProps> = ({
             style={{ backgroundImage: NOISE_TEXTURE }}
           />
 
-          {/* Drag handle - mobile */}
+          {/* Drag handle area - mobile */}
+          <div className="lg:hidden flex justify-center pt-3 pb-2">
+            <div
+              className="w-10 h-1 rounded-full"
+              style={{ backgroundColor: `${turrellAndersonPalette.velvetNavy}40` }}
+            />
+          </div>
           <motion.div
-            className="w-16 h-1.5 mx-auto mt-4 mb-3 rounded-full lg:hidden cursor-grab active:cursor-grabbing"
-            style={{ backgroundColor: `${turrellAndersonPalette.velvetNavy}40` }}
-            whileHover={{ scale: 1.1 }}
+            className="absolute inset-x-0 top-0 h-12 lg:hidden touch-none cursor-grab active:cursor-grabbing z-20"
             drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.5}
+            dragConstraints={{ top: 0, bottom: 300 }}
+            dragElastic={0.2}
+            onDrag={handleDrag}
             onDragEnd={handleDragEnd}
           />
 
           {/* Content */}
           <div
+            ref={contentRef}
             className="px-6 pt-2 pb-10 lg:p-12 h-full overflow-y-auto overscroll-y-contain"
             style={{
               touchAction: 'pan-y',
-              WebkitOverflowScrolling: 'touch'
+              WebkitOverflowScrolling: 'touch',
+              maxHeight: 'calc(100% - 50px)',
             }}
           >
             {children}
