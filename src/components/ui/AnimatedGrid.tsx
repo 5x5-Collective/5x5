@@ -84,7 +84,7 @@ const gridContent: ContentKey[][] = [
 
 const placeholderContent: Record<
   ContentKey,
-  { text: string; link: string; createdBy?: { name: string; url: string } }
+  { text: string; link: string; createdBy?: { name: string; url: string }; images?: string[] }
 > = {
   // Row 1 - Navigation
   About: {
@@ -465,6 +465,47 @@ const ContentCard: React.FC<ContentCardProps> = ({
             transition={{ delay: 0.4, duration: 0.6 }}
           />
         </motion.div>
+
+        {/* Images (if any) */}
+        {placeholderContent[content].images && placeholderContent[content].images!.length > 0 && (
+          <motion.div
+            className="mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+          >
+            <div className={`grid gap-4 ${
+              placeholderContent[content].images!.length === 1
+                ? 'grid-cols-1 max-w-2xl mx-auto'
+                : placeholderContent[content].images!.length === 2
+                ? 'grid-cols-2'
+                : 'grid-cols-2 lg:grid-cols-3'
+            }`}>
+              {placeholderContent[content].images!.map((imageSrc, i) => (
+                <motion.div
+                  key={i}
+                  className="overflow-hidden rounded-lg relative group"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 + i * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div
+                    className="absolute inset-0 rounded-lg pointer-events-none z-10"
+                    style={{
+                      boxShadow: `inset 0 0 0 3px ${turrellAndersonPalette.warmIvory}`,
+                    }}
+                  />
+                  <img
+                    src={imageSrc}
+                    alt={`${content} image ${i + 1}`}
+                    className="w-full h-auto object-contain rounded-lg"
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Description */}
         <CardBody accent={accent} delay={0.5} className="text-center mb-10">
