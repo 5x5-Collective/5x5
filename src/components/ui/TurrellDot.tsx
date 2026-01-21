@@ -161,12 +161,12 @@ export const TurrellDot: React.FC<TurrellDotProps> = ({
       <motion.div
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
-          background: `radial-gradient(circle, ${glowColor}${Math.round(glowIntensity * 60).toString(16).padStart(2, '0')} 0%, transparent 70%)`,
-          filter: `blur(${4 + glowIntensity * 8}px)`,
+          background: `radial-gradient(circle, ${glowColor}${Math.round(glowIntensity * 50).toString(16).padStart(2, '0')} 0%, transparent 70%)`,
+          filter: `blur(${2 + glowIntensity * 4}px)`,
         }}
         animate={{
-          scale: 1 + glowIntensity * 0.5,
-          opacity: 0.3 + glowIntensity * 0.7,
+          scale: 1 + glowIntensity * 0.3,
+          opacity: 0.3 + glowIntensity * 0.5,
         }}
         transition={{ duration: 0.3 }}
       />
@@ -174,15 +174,15 @@ export const TurrellDot: React.FC<TurrellDotProps> = ({
       {/* Hover glow effect */}
       {isHovered && (
         <motion.div
-          className="absolute inset-[-50%] rounded-full pointer-events-none"
+          className="absolute inset-0 rounded-full pointer-events-none"
           style={{
-            background: `radial-gradient(circle, ${baseColor}80 0%, ${glowColor}40 40%, transparent 70%)`,
-            filter: "blur(8px)",
+            background: `radial-gradient(circle, ${baseColor}60 0%, ${glowColor}30 50%, transparent 80%)`,
+            filter: "blur(4px)",
           }}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1.5, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1.2, opacity: 0.8 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          transition={{ duration: 0.2 }}
         />
       )}
 
@@ -208,7 +208,7 @@ export const TurrellDot: React.FC<TurrellDotProps> = ({
           <svg
             viewBox="0 0 24 24"
             className="w-[1em] h-[1em]"
-            style={{ filter: `drop-shadow(0 0 ${3 + glowIntensity * 6}px ${baseColor})` }}
+            style={{ filter: `drop-shadow(0 0 ${2 + glowIntensity * 3}px ${baseColor})` }}
           >
             {/* Simple white dot with colored glow from drop-shadow */}
             <circle
