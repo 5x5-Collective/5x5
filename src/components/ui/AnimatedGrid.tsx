@@ -1,12 +1,13 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Bricolage_Grotesque, Content } from "next/font/google";
 import Link from "next/link";
 import Image from "next/image";
 import GalleryContentCard from "./GalleryContentCard";
 import SubscribeCard from "./SubscribeCard";
+import { TurrellDot } from "./TurrellDot";
 import {
   TurrellAndersonCard,
   LightLineDivider,
@@ -577,9 +578,43 @@ interface AnimatedGridProps {
    * slug: For top two rows (artists), pass the artist slug (e.g. 'nikhil-kumar'). Null for no highlight or non-artist dots.
    */
   slug?: string | null;
+  /**
+   * useTurrellDots: Enable Turrell-style gradient dots with light field effect.
+   * Set to false (default) for original dot style.
+   */
+  useTurrellDots?: boolean;
 }
 
-export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
+export default function AnimatedGrid({ slug = null, useTurrellDots = false }: AnimatedGridProps) {
+  // Grid-level mouse tracking for Turrell light field effect
+  const [gridMousePosition, setGridMousePosition] = useState<{ row: number; col: number } | null>(null);
+  const artistGridRef = useRef<HTMLDivElement>(null);
+  const mainGridRef = useRef<HTMLDivElement>(null);
+  const overflowGridRef = useRef<HTMLDivElement>(null);
+
+  // Calculate which "cell" the mouse is over based on grid position
+  const handleGridMouseMove = useCallback((
+    e: React.MouseEvent<HTMLDivElement>,
+    gridRef: React.RefObject<HTMLDivElement>,
+    rowOffset: number = 0
+  ) => {
+    if (!gridRef.current || !useTurrellDots) return;
+    const rect = gridRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const cols = 5;
+    const rows = gridRef === artistGridRef ? 2 : gridRef === mainGridRef ? 3 : 2;
+    const cellWidth = rect.width / cols;
+    const cellHeight = rect.height / rows;
+    const col = Math.min(Math.max(0, Math.floor(x / cellWidth)), cols - 1);
+    const row = Math.min(Math.max(0, Math.floor(y / cellHeight)), rows - 1) + rowOffset;
+    setGridMousePosition({ row, col });
+  }, [useTurrellDots]);
+
+  const handleGridMouseLeave = useCallback(() => {
+    setGridMousePosition(null);
+  }, []);
+
   // Split grid logic
   // Top: 2 rows from ancient-technology.json (5x2)
   // Only use first 8 artists, then add Subscribe and Instagram as special dots
@@ -891,13 +926,19 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
               48 Hester St, NYC 8/7-8/28 W-Sa 12-6pm
             </span>
           </div>
-          <div className="grid grid-rows-2 grid-cols-5 gap-2 aspect-[5/2] select-none w-[90vw] max-w-[500px]">
+          <div
+            ref={artistGridRef}
+            className="grid grid-rows-2 grid-cols-5 gap-2 aspect-[5/2] select-none w-[90vw] max-w-[500px]"
+            onMouseMove={(e) => handleGridMouseMove(e, artistGridRef, 0)}
+            onMouseLeave={handleGridMouseLeave}
+          >
             {artistRows.map((row, rowIndex) =>
               row.map((artist, colIndex) => {
                 const dotKey = artist.slug;
                 const isSelected = selectedDot === dotKey;
+                const DotComponent = useTurrellDots ? TurrellDot : Dot;
                 return (
-                  <Dot
+                  <DotComponent
                     key={dotKey}
                     content={artist.artistName}
                     position={dotKey}
@@ -918,6 +959,7 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
                         : undefined
                     }
                     currentPosition={{ row: rowIndex, col: colIndex }}
+                    {...(useTurrellDots && { gridMousePosition })}
                   />
                 );
               })
@@ -925,7 +967,12 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
           </div>
         </div>
         {/* Middle grid: next 3 rows from gridContent */}
-        <div className="grid grid-rows-3 grid-cols-5 gap-2 aspect-[5/3] select-none w-[90vw] max-w-[500px]">
+        <div
+          ref={mainGridRef}
+          className="grid grid-rows-3 grid-cols-5 gap-2 aspect-[5/3] select-none w-[90vw] max-w-[500px]"
+          onMouseMove={(e) => handleGridMouseMove(e, mainGridRef, 2)}
+          onMouseLeave={handleGridMouseLeave}
+        >
           {mainRows.map((row, rowIndex) =>
             row.map((content, colIndex) => {
               const dotKey = `${rowIndex + 2}-${colIndex}`;
@@ -938,9 +985,10 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
                 typeof window !== "undefined" && window.innerWidth < 1024;
               const shouldHide =
                 isMobileOrTablet && isSelected && !isClickedDot;
+              const DotComponent = useTurrellDots ? TurrellDot : Dot;
 
               return (
-                <Dot
+                <DotComponent
                   key={dotKey}
                   content={content}
                   position={dotKey}
@@ -967,6 +1015,7 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
                     row: rowIndex + 2,
                     col: colIndex,
                   }}
+                  {...(useTurrellDots && { gridMousePosition })}
                 />
               );
             })
@@ -993,7 +1042,12 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
       </div>
       {/* Overflow grid section (beneath-the-fold, scroll to reveal) */}
       <div className="top-full w-full mt-12 flex justify-center">
-        <div className="grid grid-rows-2 grid-cols-5 gap-2 aspect-[5/2] select-none overflow-x-auto w-[90vw] max-w-[500px]">
+        <div
+          ref={overflowGridRef}
+          className="grid grid-rows-2 grid-cols-5 gap-2 aspect-[5/2] select-none overflow-x-auto w-[90vw] max-w-[500px]"
+          onMouseMove={(e) => handleGridMouseMove(e, overflowGridRef, 5)}
+          onMouseLeave={handleGridMouseLeave}
+        >
           {overflowRows.map((row, rowIndex) =>
             row.map((content, colIndex) => {
               const dotKey = `overflow-${rowIndex + 3}-${colIndex}`;
@@ -1006,9 +1060,10 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
                 typeof window !== "undefined" && window.innerWidth < 1024;
               const shouldHide =
                 isMobileOrTablet && isSelected && !isClickedDot;
+              const DotComponent = useTurrellDots ? TurrellDot : Dot;
 
               return (
-                <Dot
+                <DotComponent
                   key={dotKey}
                   content={content}
                   position={dotKey}
@@ -1032,9 +1087,10 @@ export default function AnimatedGrid({ slug = null }: AnimatedGridProps) {
                       : undefined
                   }
                   currentPosition={{
-                    row: rowIndex + 3,
+                    row: rowIndex + 5,
                     col: colIndex,
                   }}
+                  {...(useTurrellDots && { gridMousePosition })}
                 />
               );
             })
