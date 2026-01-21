@@ -42,7 +42,7 @@ type ContentKey =
   | "BGM"
   | "Awaken"
   | "Ikenga Wines"
-  | "Kira"
+  | "Darkgrade"
   | "Mount Lawrence"
   | "Fullstack Human"
   | "Black Brick Project"
@@ -65,7 +65,7 @@ const gridContent: ContentKey[][] = [
     "Experiments in Reincarnation",
     "Made You Think",
   ],
-  ["BGM", "Awaken", "Ikenga Wines", "Kira", "Double Zero"],
+  ["BGM", "Awaken", "Ikenga Wines", "Darkgrade", "Double Zero"],
   [
     "Fullstack Human",
     "Black Brick Project",
@@ -153,9 +153,10 @@ const placeholderContent: Record<
     text: "The first biodesigned palm wine, made in America without any palm. Ikenga is bringing the varied flavors of Nigerian palm wine to the US using sophisticated fermentation techniques that produce the familiar flavors of palm wine in environmentally sustainable ways… Learn more.",
     link: "https://ikengawines.com/",
   },
-  Kira: {
-    text: "Kira is helping real estate agents do more for their customers with the power of AI in their palms.",
-    link: "https://withkira.com/",
+  Darkgrade: {
+    text: "Let your camera understand the world. We're building a protocol for large language models to directly interface with image sensors.",
+    link: "https://darkgrade.com/",
+    images: ["/content-images/darkgrade-1.jpeg"],
   },
 
   // Row 4 - Portfolio
@@ -287,7 +288,7 @@ export const contentColorMap: Record<ContentKey, keyof typeof colorPalette> = {
   BGM: "horizonPeach",
   Awaken: "luminalAmber",
   "Ikenga Wines": "perceptualViolet",
-  Kira: "celestialBlue",
+  Darkgrade: "celestialBlue",
   "Mount Lawrence": "infraPink",
   "Fullstack Human": "pastelGreen",
   "Black Brick Project": "horizonPeach",
