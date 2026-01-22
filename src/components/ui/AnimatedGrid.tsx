@@ -34,6 +34,8 @@ import {
   contentColorMap,
   isDarkColor,
 } from "@/data/colorPalette";
+// Import hooks for state management
+import { useDotGrid } from "@/hooks/useDotGrid";
 // Import ancient technology data
 const ancientTechData = require("../../../data/ancient-technology.json");
 
@@ -365,41 +367,15 @@ interface AnimatedGridProps {
 }
 
 export default function AnimatedGrid({ slug = null, useTurrellDots = false }: AnimatedGridProps) {
-  // Grid-level mouse tracking for Turrell light field effect
-  const [gridMousePosition, setGridMousePosition] = useState<{ row: number; col: number } | null>(null);
+  // === Grid Refs ===
   const artistGridRef = useRef<HTMLDivElement>(null);
   const mainGridRef = useRef<HTMLDivElement>(null);
   const overflowGridRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  // Calculate which "cell" the mouse is over based on grid position
-  const handleGridMouseMove = useCallback((
-    e: React.MouseEvent<HTMLDivElement>,
-    gridRef: React.RefObject<HTMLDivElement>,
-    rowOffset: number = 0
-  ) => {
-    if (!gridRef.current || !useTurrellDots) return;
-    const rect = gridRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const cols = 5;
-    const rows = gridRef === artistGridRef ? 2 : gridRef === mainGridRef ? 3 : 2;
-    const cellWidth = rect.width / cols;
-    const cellHeight = rect.height / rows;
-    const col = Math.min(Math.max(0, Math.floor(x / cellWidth)), cols - 1);
-    const row = Math.min(Math.max(0, Math.floor(y / cellHeight)), rows - 1) + rowOffset;
-    setGridMousePosition({ row, col });
-  }, [useTurrellDots]);
-
-  const handleGridMouseLeave = useCallback(() => {
-    setGridMousePosition(null);
-  }, []);
-
-  // Split grid logic
+  // === Split grid data ===
   // Top: 2 rows from ancient-technology.json (5x2)
-  // Only use first 8 artists, then add Subscribe and Instagram as special dots
   const realArtists = ancientTechnology.slice(0, 9);
-
-  // Create special dots for Subscribe and Instagram
   const specialDots = [
     {
       artistName: "Subscribe",
@@ -409,240 +385,91 @@ export default function AnimatedGrid({ slug = null, useTurrellDots = false }: An
       url: "/subscribe",
     },
   ];
-
-  // Combine real artists with special dots to fill 10 spots
   const allDots = [...realArtists, ...specialDots];
-
   const artistRows = [allDots.slice(0, 5), allDots.slice(5, 10)];
   // Middle: next 3 rows from gridContent (rows 0-2)
   const mainRows = gridContent.slice(0, 3);
   // Overflow/beneath-the-fold: last 2 rows from gridContent
   const overflowRows = gridContent.slice(3, 5);
 
+  // === Use centralized state management hook ===
+  const {
+    hoveredDot,
+    selectedDot,
+    selectedContent: selectedContentFromHook,
+    rippleDot,
+    randomDot,
+    gridMousePosition,
+    isContentExpanded,
+    setHoveredDot,
+    handleDotClick: hookHandleDotClick,
+    handleArtistDotClick: hookHandleArtistDotClick,
+    handleBackgroundClick: hookHandleBackgroundClick,
+    handleClose: hookHandleClose,
+    handleGridMouseMove: hookHandleGridMouseMove,
+    handleGridMouseLeave,
+    getDotDisplayState,
+    getSelectedPosition,
+  } = useDotGrid(
+    {
+      artists: realArtists,
+      mainContent: mainRows as string[][],
+      overflowContent: overflowRows as string[][],
+    },
+    slug,
+    { enableMouseTracking: useTurrellDots }
+  );
+
+  // Cast selectedContent to ContentKey for type compatibility
+  const selectedContent = selectedContentFromHook as ContentKey | null;
+
+  // === Wrapper for grid mouse move (adapts to ref-based API) ===
+  const handleGridMouseMove = useCallback((
+    e: React.MouseEvent<HTMLDivElement>,
+    gridRefParam: React.RefObject<HTMLDivElement>,
+    rowOffset: number = 0
+  ) => {
+    if (!gridRefParam.current || !useTurrellDots) return;
+    const rect = gridRefParam.current.getBoundingClientRect();
+    const rows = gridRefParam === artistGridRef ? 2 : gridRefParam === mainGridRef ? 3 : 2;
+    hookHandleGridMouseMove(e, rect, rows, rowOffset);
+  }, [useTurrellDots, hookHandleGridMouseMove]);
+
+  // === Legacy router for direct navigation ===
   const router = useRouter();
-  const [hoveredDot, setHoveredDot] = useState<string | null>(null);
-  const [rippleDot, setRippleDot] = useState<string | null>(null);
-  // Initialize selectedDot and selectedContent based on slug (for top two rows/artists)
-  // If slug is provided, use it as the selected dot (assuming slug === dot key, e.g. '0-2'). Otherwise, default to null.
-  const [selectedDot, setSelectedDot] = useState<string | null>(
-    () => slug || null
-  );
-  // For selectedContent, if slug matches an artist, use artist data; otherwise, use default logic (null).
-  const [selectedContent, setSelectedContent] = useState<ContentKey | null>(
-    () => {
-      if (!slug) return null;
-      // Try to find matching artist in ancientTechnology by slug
-      const artistData = (ancientTechData as any[]).find(
-        (a) => a.slug === `events-ancient-technology-${slug}`
-      );
-      if (artistData) {
-        return slug as ContentKey;
-      }
-      return null;
-    }
-  );
-  const [randomDot, setRandomDot] = useState<string | null>(null);
-  const [isContentExpanded, setIsContentExpanded] = useState(false);
+
+  // === Legacy refs for backward compatibility ===
+  // These are maintained for any code that still references them directly
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
   const rippleInterval = useRef<NodeJS.Timeout | null>(null);
   const randomInterval = useRef<NodeJS.Timeout | null>(null);
   const isAnimating = useRef(false);
   const usedDots = useRef<Set<string>>(new Set());
   const animationCount = useRef(0);
-  const gridRef = useRef<HTMLDivElement>(null);
 
-  // Function to get the next dot position for ripple
-  const getNextDotPosition = (current: string | null) => {
-    if (!current) return "0-0";
-    const [row, col] = current.split("-").map(Number);
-    if (col === 4) {
-      return row === 4 ? null : `${row + 1}-0`;
-    }
-    return `${row}-${col + 1}`;
-  };
+  // === Event Handlers (delegated to hook) ===
 
-  // Function to get a random unused dot
-  const getRandomUnusedDot = () => {
-    const allDots = [];
-    for (let i = 0; i < 5; i++) {
-      for (let j = 0; j < 5; j++) {
-        const dot = `${i}-${j}`;
-        if (!usedDots.current.has(dot)) {
-          allDots.push(dot);
-        }
-      }
-    }
-
-    if (allDots.length === 0) {
-      // All dots have been used, reset the set
-      usedDots.current.clear();
-      return getRandomUnusedDot();
-    }
-
-    const randomIndex = Math.floor(Math.random() * allDots.length);
-    const selectedDot = allDots[randomIndex];
-    usedDots.current.add(selectedDot);
-    return selectedDot;
-  };
-
-  // Function to run ripple animation
-  const runRippleAnimation = () => {
-    if (isAnimating.current || selectedDot) return;
-    isAnimating.current = true;
-    setRippleDot("0-0");
-
-    rippleInterval.current = setInterval(() => {
-      setRippleDot((prev) => {
-        const next = getNextDotPosition(prev);
-        if (!next) {
-          if (rippleInterval.current) {
-            clearInterval(rippleInterval.current);
-            rippleInterval.current = null;
-          }
-          setRippleDot(null);
-          isAnimating.current = false;
-          resetInactivityTimer();
-        }
-        return next;
-      });
-    }, 200);
-  };
-
-  // Function to run random dot animation
-  const runRandomDotAnimation = () => {
-    if (isAnimating.current || selectedDot) return;
-    isAnimating.current = true;
-    animationCount.current = 0;
-
-    const nextDot = getRandomUnusedDot();
-    setRandomDot(nextDot);
-    animationCount.current++;
-
-    randomInterval.current = setInterval(() => {
-      if (animationCount.current >= 25) {
-        if (randomInterval.current) {
-          clearInterval(randomInterval.current);
-          randomInterval.current = null;
-        }
-        setRandomDot(null);
-        isAnimating.current = false;
-        usedDots.current.clear();
-        resetInactivityTimer();
-        return;
-      }
-
-      setRandomDot(null);
-      setTimeout(() => {
-        const nextDot = getRandomUnusedDot();
-        setRandomDot(nextDot);
-        animationCount.current++;
-      }, 100);
-    }, 200);
-  };
-
-  // Reset inactivity timer when user interacts
-  const resetInactivityTimer = () => {
-    if (inactivityTimer.current) {
-      clearTimeout(inactivityTimer.current);
-    }
-
-    if (!isAnimating.current && !selectedDot) {
-      inactivityTimer.current = setTimeout(() => {
-        // Randomly choose between animations
-        Math.random() < 0.5 ? runRippleAnimation() : runRandomDotAnimation();
-      }, 5000);
-    }
-  };
-
-  // Handle background click
-  const handleBackgroundClick = (e: React.MouseEvent) => {
+  // Handle background click - uses hook's handler
+  const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
     if (selectedContent) {
-      setSelectedDot(null);
-      setSelectedContent(null);
-      setIsContentExpanded(false);
-      router.push("/");
-      resetInactivityTimer();
+      hookHandleBackgroundClick();
     }
-  };
+  }, [selectedContent, hookHandleBackgroundClick]);
 
-  // Handle dot click
-  const handleDotClick = (dotKey: string, content: string) => {
-    // Clear any ongoing animation
-    if (rippleInterval.current) {
-      clearInterval(rippleInterval.current);
-      rippleInterval.current = null;
-    }
-    if (randomInterval.current) {
-      clearInterval(randomInterval.current);
-      randomInterval.current = null;
-    }
-    if (inactivityTimer.current) {
-      clearTimeout(inactivityTimer.current);
-      inactivityTimer.current = null;
-    }
-    setRippleDot(null);
-    setRandomDot(null);
-    isAnimating.current = false;
+  // Handle dot click - uses hook's handler
+  const handleDotClick = useCallback((dotKey: string, content: string) => {
+    hookHandleDotClick(dotKey, content);
+  }, [hookHandleDotClick]);
 
-    // Animate to selected state using the clicked dot position
-    setSelectedDot(dotKey);
-    setSelectedContent(content as ContentKey);
-  };
+  // Handle artist dot click - uses hook's handler
+  const handleArtistDotClick = useCallback((dotKey: string, artist: any) => {
+    hookHandleArtistDotClick(dotKey, artist);
+  }, [hookHandleArtistDotClick]);
 
-  // Handle artist dot click with routing
-  const handleArtistDotClick = (dotKey: string, artist: any) => {
-    // Clear any ongoing animation
-    if (rippleInterval.current) {
-      clearInterval(rippleInterval.current);
-      rippleInterval.current = null;
-    }
-    if (randomInterval.current) {
-      clearInterval(randomInterval.current);
-      randomInterval.current = null;
-    }
-    if (inactivityTimer.current) {
-      clearTimeout(inactivityTimer.current);
-      inactivityTimer.current = null;
-    }
-    setRippleDot(null);
-    setRandomDot(null);
-    isAnimating.current = false;
-
-    // Handle special link dots
-    if (artist.isSpecialLink) {
-      if (artist.linkType === "subscribe") {
-        router.push("/subscribe");
-      } else if (artist.linkType === "instagram") {
-        window.open(artist.url, "_blank", "noopener,noreferrer");
-      }
-      return;
-    }
-
-    // Create URL-friendly artist name from artistName
-    const artistSlug = artist.artistName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
-    // Push to the artist-specific URL
-    router.push(`/events/ancient-technology/${artistSlug}`);
-
-    // Also set local state for immediate UI feedback
-    setSelectedDot(dotKey);
-    setSelectedContent(artistSlug as ContentKey);
-  };
-
-  // Start inactivity timer on mount
-  useEffect(() => {
-    resetInactivityTimer();
-
-    // Cleanup function
-    return () => {
-      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-      if (rippleInterval.current) clearInterval(rippleInterval.current);
-      if (randomInterval.current) clearInterval(randomInterval.current);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Handle close - uses hook's handler
+  const handleClose = useCallback(() => {
+    hookHandleClose();
+  }, [hookHandleClose]);
 
   // Add event listener for navbar dropdown
   useEffect(() => {
@@ -650,8 +477,7 @@ export default function AnimatedGrid({ slug = null, useTurrellDots = false }: An
       const key = e.detail?.key;
       if (!key) return;
       if (key === "Subscribe") {
-        setSelectedDot("subscribe");
-        setSelectedContent("Subscribe" as ContentKey);
+        handleDotClick("subscribe", "Subscribe");
         return;
       }
       // Find the position of the card in the grid
@@ -659,8 +485,7 @@ export default function AnimatedGrid({ slug = null, useTurrellDots = false }: An
         for (let col = 0; col < gridContent[row].length; col++) {
           if (gridContent[row][col] === key) {
             const dotKey = `${row}-${col}`;
-            setSelectedDot(dotKey);
-            setSelectedContent(key);
+            handleDotClick(dotKey, key);
             return;
           }
         }
@@ -668,14 +493,12 @@ export default function AnimatedGrid({ slug = null, useTurrellDots = false }: An
     };
     window.addEventListener("open-grid-card", handler);
     return () => window.removeEventListener("open-grid-card", handler);
-  }, []);
+  }, [handleDotClick]);
 
   // Handle subscribe slug - automatically show subscribe card
   useEffect(() => {
     if (slug === "subscribe") {
-      setSelectedDot("subscribe");
-      setSelectedContent("subscribe" as ContentKey);
-      setIsContentExpanded(true);
+      handleDotClick("subscribe", "Subscribe");
     }
   }, [slug]);
 
@@ -904,9 +727,7 @@ export default function AnimatedGrid({ slug = null, useTurrellDots = false }: An
                       isExpanded={isContentExpanded}
                       onClose={() => {
                         router.push("/");
-                        setSelectedDot(null);
-                        setSelectedContent(null);
-                        setIsContentExpanded(false);
+                        handleClose();
                       }}
                     />
                   );
@@ -935,10 +756,7 @@ export default function AnimatedGrid({ slug = null, useTurrellDots = false }: An
                       isExpanded={isContentExpanded}
                       onClose={() => {
                         router.push("/");
-                        setSelectedDot(null);
-                        setSelectedContent(null);
-                        setIsContentExpanded(false);
-                        // Reset URL to root when closing
+                        handleClose();
                       }}
                     />
                   );
@@ -949,11 +767,7 @@ export default function AnimatedGrid({ slug = null, useTurrellDots = false }: An
                   <ContentCard
                     content={selectedContent}
                     isExpanded={isContentExpanded}
-                    onClose={() => {
-                      setSelectedDot(null);
-                      setSelectedContent(null);
-                      setIsContentExpanded(false);
-                    }}
+                    onClose={handleClose}
                   />
                 );
               })()}
