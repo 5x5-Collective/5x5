@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { colorPalette, contentColorMap } from "../ui/AnimatedGrid";
+import { colorPalette, contentColorMap } from "@/data/colorPalette";
 
 const navItems = [
   { name: "About", key: "About" },
