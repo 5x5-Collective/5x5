@@ -169,21 +169,4 @@ export const useDotProps = (
   };
 };
 
-/**
- * Hook to manage a collection of dots (grid-level state)
- * This will be expanded in Phase 2
- */
-export const useDotGrid = (initialDots: DotEntity[][]) => {
-  // Placeholder for Phase 2 - full grid state management
-  // Will include:
-  // - Hover state
-  // - Selection state
-  // - Animation orchestration
-  // - Collection tracking
-  return {
-    dots: initialDots,
-    // ... more to come
-  };
-};
-
 export default useDotProps;
