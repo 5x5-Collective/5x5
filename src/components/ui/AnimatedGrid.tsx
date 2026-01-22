@@ -36,6 +36,12 @@ import {
 } from "@/data/colorPalette";
 // Import hooks for state management
 import { useDotGrid } from "@/hooks/useDotGrid";
+// Import animation functions for consistent behavior
+import {
+  getDotAnimateState,
+  getDotTransition,
+  getPulseAnimation,
+} from "@/animations";
 // Import ancient technology data
 const ancientTechData = require("../../../data/ancient-technology.json");
 
@@ -73,48 +79,31 @@ const Dot: React.FC<DotProps> = ({
   selectedPosition,
   currentPosition,
 }) => {
-  const { row, col } = currentPosition;
-  const selectedRow = selectedPosition?.row ?? 0;
-  const selectedCol = selectedPosition?.col ?? 0;
+  // Use animation functions for consistent behavior
+  const animateState = getDotAnimateState(
+    currentPosition,
+    selectedPosition,
+    { isHovered, isRippling, isRandomlySelected, isSelected, isClickedDot, shouldHide }
+  );
+
+  // Calculate color based on content (content-specific, not in animation module)
+  const dotColor = content
+    ? isHovered || (isSelected && isClickedDot)
+      ? colorPalette[complementaryColors[contentColorMap[content as ContentKey]]]
+      : colorPalette.atmosphericWhite
+    : colorPalette.atmosphericWhite;
+
+  // Get pulse animation for idle state
+  const pulseAnimation = getPulseAnimation();
 
   return (
     <motion.div
       initial={{ scale: 1, x: 0, y: 0 }}
       animate={{
-        scale: isHovered
-          ? 1.5
-          : isRippling
-          ? 2
-          : isRandomlySelected
-          ? 2
-          : isSelected
-          ? isClickedDot
-            ? 1.2
-            : 0
-          : 1,
-        x:
-          isSelected && !isClickedDot
-            ? `calc(${selectedCol - col} * (100% + clamp(0.5rem, 3vmin, 2rem)))`
-            : 0,
-        y:
-          isSelected && !isClickedDot
-            ? `calc(${selectedRow - row} * (100% + clamp(0.5rem, 3vmin, 2rem)))`
-            : 0,
-        opacity: shouldHide ? 0 : isSelected ? (isClickedDot ? 1 : 0) : 1,
-        color: content
-          ? isHovered || (isSelected && isClickedDot)
-            ? colorPalette[
-                complementaryColors[contentColorMap[content as ContentKey]]
-              ]
-            : colorPalette.atmosphericWhite
-          : colorPalette.atmosphericWhite,
+        ...animateState,
+        color: dotColor,
       }}
-      transition={{
-        type: "spring",
-        stiffness: 400,
-        damping: 30,
-        duration: 0.3,
-      }}
+      transition={getDotTransition()}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={onClick}
@@ -123,13 +112,8 @@ const Dot: React.FC<DotProps> = ({
       whileHover={!isSelected ? { scale: 1.5 } : {}}
     >
       <motion.div
-        animate={{ scale: [0.6, 1.3] }}
-        transition={{
-          duration: 2.5,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "easeInOut",
-        }}
+        animate={pulseAnimation.animate}
+        transition={pulseAnimation.transition}
         className="w-full h-full flex items-center justify-center"
       >
         {isHovered && !isSelected ? (
